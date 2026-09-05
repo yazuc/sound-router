@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -192,6 +193,8 @@ func setupSharedSinkForGroup(group ProcessGroup) (string, error) {
 
 	// 1. Create a virtual null sink
 	_ = exec.Command("pactl", "load-module", "module-null-sink", "sink_name=Virtual_Sink", "sink_properties=device.description=Virtual_Stream_Sink").Run()
+	
+	time.Sleep(50 * time.Millisecond)
 
 	// 2. Create combined sink targeting both real hardware and virtual sink
 	combineCmd := exec.Command("pactl", "load-module", "module-combine-sink",
@@ -199,6 +202,9 @@ func setupSharedSinkForGroup(group ProcessGroup) (string, error) {
 		fmt.Sprintf("slaves=%s,Virtual_Sink", realSink),
 		"sink_properties=device.description=Combined_Process_Sink",
 	)
+
+	time.Sleep(50 * time.Millisecond)
+
 	if err := combineCmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to create combined sink: %w", err)
 	}
@@ -206,6 +212,7 @@ func setupSharedSinkForGroup(group ProcessGroup) (string, error) {
 	// 3. Move all streams in the process group to the combined sink
 	movedCount := 0
 	for _, id := range group.StreamIDs {
+		time.Sleep(50 * time.Millisecond)
 		moveCmd := exec.Command("pactl", "move-sink-input", id, "Combined_Shared_Sink")
 		if err := moveCmd.Run(); err == nil {
 			movedCount++
